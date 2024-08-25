@@ -1,0 +1,47 @@
+function extractURLsAndCleanText() {
+  var body = DocumentApp.getActiveDocument().getBody();
+  var paragraphs = body.getParagraphs();
+  var allURLs = [];
+
+  // Iterate through each paragraph and extract URLs
+  for (var i = 0; i < paragraphs.length; i++) {
+    var paragraph = paragraphs[i];
+    
+    if (paragraph.getNumChildren() > 0) {
+      for (var j = 0; j < paragraph.getNumChildren(); j++) {
+        var element = paragraph.getChild(j);
+        
+        if (element.getType() == DocumentApp.ElementType.TEXT) {
+          var textElement = element.asText();
+          var text = textElement.getText();
+          var indices = textElement.getTextAttributeIndices();
+          
+          // Replace hyperlink titles with URLs and collect URLs
+          for (var k = 0; k < indices.length; k++) {
+            var startIndex = indices[k];
+            var url = textElement.getLinkUrl(startIndex);
+            
+            if (url) {
+              textElement.setText(url);  // Replace the title with the URL
+              textElement.setLinkUrl(0, url.length - 1, url);  // Ensure the URL remains clickable
+              
+              if (allURLs.indexOf(url) === -1) {  // Avoid duplicates
+                allURLs.push(url);
+              }
+              
+              // Exit the loop after replacing the text to avoid index issues
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // Clear the document and insert a clean list of URLs, each on a new line
+  body.clear();
+  
+  for (var i = 0; i < allURLs.length; i++) {
+    body.appendParagraph(allURLs[i]).setLinkUrl(allURLs[i]);
+  }
+}
